@@ -49,7 +49,13 @@ app.post('/api/xml', (req, res) => {
         return sendErrorResponse(res, 'Missing <authentication> element');
     }
     const auth = operation.authentication[0];
-    if (!auth.sessionid || !Array.isArray(auth.sessionid) || auth.sessionid[0] === undefined) {
+    if (
+        (!auth.sessionid || !Array.isArray(auth.sessionid) || auth.sessionid[0] === undefined) &&
+        (!auth.login || !Array.isArray(auth.login) || auth.login.length === 0 ||
+        !auth.login[0].userid || !Array.isArray(auth.login[0].userid) ||
+        !auth.login[0].companyid || !Array.isArray(auth.login[0].companyid) ||
+        !auth.login[0].password || !Array.isArray(auth.login[0].password))
+    ) {
         return sendErrorResponse(res, 'Missing or invalid <sessionid> in <authentication>');
     }
 
@@ -66,28 +72,39 @@ app.post('/api/xml', (req, res) => {
     const func = content.function[0];
     console.log("Parsed function element:", func);
     
-    if (!func.readbyname || !Array.isArray(func.readbyname) || !func.readbyname[0]) {
-      console.error("readbyname element is missing or in an unexpected format:", func.readbyname);
-      return sendErrorResponse(res, 'Missing <readbyname> element in <function>');
+    if (
+        (!func.getapisession || !Array.isArray(func.getapisession) || func.getapisession[0]) &&
+        (!func.readbyname || !Array.isArray(func.readbyname) || !func.readbyname[0]) &&
+        (!func.create || !Array.isArray(func.create) || !func.create[0])
+    ) {
+        console.error("Function element is missing or in an unexpected format:", func);
+        return sendErrorResponse(res, 'Missing <getapisession>, <readbyname>, or <create> element in <function>');
     }
     if (!func.$ || !func.$.controlid) {
         return sendErrorResponse(res, 'Missing controlid attribute in <function>');
     }
 
-    // Validate the <readbyname> inside <function>
-    if (!func.readbyname || !Array.isArray(func.readbyname) || !func.readbyname[0]) {
-        return sendErrorResponse(res, 'Missing <readbyname> element in <function>');
+    // Validate <readbyname> if present
+    if (func.readbyname && Array.isArray(func.readbyname) && func.readbyname[0]) {
+        const readbyname = func.readbyname[0];
+        if (
+            !readbyname.object || !Array.isArray(readbyname.object) || readbyname.object[0] === undefined ||
+            !readbyname.keys || !Array.isArray(readbyname.keys) || readbyname.keys[0] === undefined ||
+            !readbyname.fields || !Array.isArray(readbyname.fields) || !readbyname.fields[0] === undefined
+        ) {
+            return sendErrorResponse(res, 'Missing required fields in <readbyname>: object, keys, or fields');
+        }
     }
-    const readbyname = func.readbyname[0];
-    if (
-        !readbyname.object || !Array.isArray(readbyname.object) ||
-        readbyname.object[0] === undefined ||
-        !readbyname.keys || !Array.isArray(readbyname.keys) ||
-        readbyname.keys[0] === undefined ||
-        !readbyname.fields || !Array.isArray(readbyname.fields) ||
-        readbyname.fields[0] === undefined
-    ) {
-        return sendErrorResponse(res, 'Missing required fields in <readbyname>: object, keys, or fields');
+    
+    // Validate <getapisession> if present
+    if (func.getapisession && Array.isArray(func.getapisession) && func.getapisession[0]) {
+            return sendErrorResponse(res, '<getapisession> should be a tag without fields');
+    }
+    
+    // Validate <create> if present
+    if (func.create && Array.isArray(func.create) && func.create[0]) {
+        const create = func.create[0];
+        // TODO
     }
 
     // At this point, we assume that the incoming XML is valid.
