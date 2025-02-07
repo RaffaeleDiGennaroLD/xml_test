@@ -114,14 +114,35 @@ app.post('/api/xml', (req, res) => {
     const fakeCustomerID = 'CUST-12345';
     const fakeResponse = {
         response: {
-            status: 'success',
-            message: 'Request processed successfully',
-            data: {
-                CUSTOMER: {
-                    CUSTOMERID: fakeCustomerID,
-                    // You could add additional fake fields here if needed.
+            control: {
+                status: 'success',
+                senderid: 'senderTestID',
+                controlid: 'controlTestID',
+                uniqueid: false,
+                dtdversion: '3.0'
+            },
+            operation: {
+                authentication: {
+                    status: 'success',
+                    userid: 'userTestID',
+                    companyid: 'companyTestID',
+                    locationid: '',
+                    sessiontimestamp: '2025-01-01',
+                    sessiontimeout: '2026-01-01'
+                },
+                result: {
+                    status: 'success',
+                    function: 'create',
+                    controlid: 'controlTestID',
+                    data: {
+                        CUSTOMER: {
+                            CUSTOMERID: fakeCustomerID,
+                            // You could add additional fake fields here if needed.
+                        }
+                    }
                 }
             }
+            
         }
     };
 
